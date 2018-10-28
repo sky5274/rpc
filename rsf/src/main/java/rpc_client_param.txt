@@ -1,0 +1,4 @@
+
+1:rpc client need group to adpate the diffrent evn
+2:rpc client 需要一个注册中管理服务提供与消费，并且有一个心跳检查同组的的服务注册情况
+3：rpc client 管理中心需要监控每次的请求情况（服务：响应时长，请求链路，异常次数）（消费：同组请求分配，每个提供者的监控状态，响应时长以及异常次数）
