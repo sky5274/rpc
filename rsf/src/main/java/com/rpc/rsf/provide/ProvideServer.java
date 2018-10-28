@@ -10,6 +10,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.rpc.rsf.base.ResouceProperties;
+
 /**
  * 服务端
  *<p>Title: ServerManager.java</p>
@@ -27,7 +29,12 @@ public class ProvideServer implements ApplicationContextAware{
 	private ServerSocket server;
 	private ApplicationContext applicationContext;
 	
-	public ProvideServer() {};
+	public ProvideServer() {
+		String port_str = ResouceProperties.getProperty("rpc.provider.server.port");
+		if(port_str!=null) {
+			port=Integer.valueOf(port_str);
+		}
+	};
 	public ProvideServer(int port) {
 		this.port=port;
 	};

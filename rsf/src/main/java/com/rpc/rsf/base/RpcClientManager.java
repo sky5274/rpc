@@ -28,17 +28,13 @@ public class RpcClientManager {
 	private static String ip="";
 	private String tipTitle="rpc center ";
 	
-	public RpcClientManager() {}
+	public RpcClientManager() throws IOException, KeeperException, InterruptedException {
+		zkClient=getZookeeper();
+	}
 	public RpcClientManager(String path) throws IOException, KeeperException, InterruptedException {
 		log.debug(tipTitle+"init");
 		this.url=path;
-		zkClient=new ZooKeeper(url, sessionTimeout, new Watcher() {
-			public void process(WatchedEvent watch) {
-				log.debug("rpc config get watch:"+watch.getPath());
-
-			}
-		});
-		iniNode();
+		zkClient=getZookeeper();
 	}
 
 	/**
@@ -52,6 +48,10 @@ public class RpcClientManager {
 	 */
 	public ZooKeeper getZookeeper() throws IOException, KeeperException, InterruptedException {
 		if(zkClient==null) {
+			String zookeeper_url = ResouceProperties.getProperty("rpc.provider.server.port");
+			if(zookeeper_url==null) {
+				url=zookeeper_url;
+			}
 			zkClient=new ZooKeeper(url, sessionTimeout, new Watcher() {
 				public void process(WatchedEvent watch) {
 					log.debug("rpc config get watch:"+watch.getPath());
