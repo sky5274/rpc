@@ -20,7 +20,7 @@ import org.springframework.util.StringUtils;
 
 public class RpcClientManager {
 	private static  Log log=LogFactory.getLog(RpcClientManager.class);
-	static String defaut_pref="com_sky_rpc_02";
+	public static String defaut_pref="com_sky_rpc_02";
 	private String defaut_desc="com_sky_rpc_link_root_node";
 	private ZooKeeper zkClient=null;
 	private String url="127.0.0.1:2181";
@@ -55,7 +55,6 @@ public class RpcClientManager {
 			zkClient=new ZooKeeper(url, sessionTimeout, new Watcher() {
 				public void process(WatchedEvent watch) {
 					log.debug("rpc config get watch:"+watch.getPath());
-
 				}
 			});
 			iniNode();
@@ -103,6 +102,29 @@ public class RpcClientManager {
 		Stat state = getZookeeper().exists(path, true);
 		if( state==null) {
 			return  getZookeeper().create(path,data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.PERSISTENT);
+		}else {
+			getZookeeper().setData(path,data.getBytes(), state.getVersion());
+			return path;
+		}
+	}
+	
+	/**
+	 * 创建临时节点
+	* <p>Title: createTemp</p>
+	* <p>Description: </p>
+	* @param path
+	* @param data
+	* @return
+	* @throws KeeperException
+	* @throws InterruptedException
+	* @throws IOException
+	 */
+	public String createTemp(String path,String data) throws KeeperException, InterruptedException, IOException {
+		log.info(tipTitle+"add node:"+path);
+		path=intPath(path);
+		Stat state = getZookeeper().exists(path, true);
+		if( state==null) {
+			return  getZookeeper().create(path,data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.EPHEMERAL);
 		}else {
 			getZookeeper().setData(path,data.getBytes(), state.getVersion());
 			return path;
@@ -177,13 +199,19 @@ public class RpcClientManager {
 	 */
 	public List<String> getChildrenPath(String path,Watcher watcher) throws KeeperException, InterruptedException, IOException {
 		path=intPath(path);
-		log.debug(tipTitle+" get child node in path:"+path);
-		List<String> children = getZookeeper().getChildren(path, watcher);
+		List<String> children = getChildrenNode(path, watcher);
 		List<String> list=new LinkedList<String>();
 		for(String cs:children) {
 			list.add(path+"/"+cs);
 		}
 		return list;
+	}
+	
+	public List<String> getChildrenNode(String path,Watcher watcher) throws KeeperException, InterruptedException, IOException {
+		path=intPath(path);
+		log.debug(tipTitle+" get child node in path:"+path);
+		List<String> children = getZookeeper().getChildren(path, watcher);
+		return children;
 	}
 
 	/**
