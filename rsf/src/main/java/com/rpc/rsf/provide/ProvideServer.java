@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.StringUtils;
 
 import com.rpc.rsf.base.ResouceProperties;
 
@@ -28,11 +29,23 @@ public class ProvideServer implements ApplicationContextAware{
 	private boolean isOpen=true;
 	private ServerSocket server;
 	private ApplicationContext applicationContext;
+	private String portKey="rpc.provider.server.port";
 	
 	public ProvideServer() {
-		String port_str = ResouceProperties.getProperty("rpc.provider.server.port");
-		if(port_str!=null) {
-			port=Integer.valueOf(port_str);
+		String sys_port = System.getProperty(portKey);
+		if(StringUtils.isEmpty(sys_port)) {
+			String port_str = ResouceProperties.getProperty(portKey);
+			if(port_str!=null) {
+				sys_port=port_str;
+			}
+		}
+		if(!StringUtils.isEmpty(sys_port)) {
+			try {
+				port=Integer.valueOf(sys_port);
+				System.setProperty(portKey, sys_port);
+			} catch (Exception e) {
+				log.warn(e.getMessage(), e);
+			}
 		}
 	};
 	public ProvideServer(int port) {
