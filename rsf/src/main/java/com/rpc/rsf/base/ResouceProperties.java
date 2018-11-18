@@ -1,7 +1,9 @@
 package com.rpc.rsf.base;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import org.springframework.util.ResourceUtils;
 
 /**
  * 资源文件读写信息
@@ -19,7 +21,7 @@ public class ResouceProperties {
 		if(properties==null) {
 			try {
 				properties=new Properties();
-				properties.load(ResouceProperties.class.getResourceAsStream("rpc.properties"));
+				properties.load(new FileInputStream(ResourceUtils.getFile("classpath:rpc.properties")));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
