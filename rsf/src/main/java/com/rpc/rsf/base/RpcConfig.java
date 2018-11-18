@@ -1,19 +1,17 @@
 package com.rpc.rsf.base;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.springframework.util.StringUtils;
 import com.alibaba.fastjson.JSON;
 
 /**
@@ -29,7 +27,6 @@ public class RpcConfig {
 	private static  Log log=LogFactory.getLog(RpcConfig.class);
 	private static RpcClientManager clientManange=null;
 	public static String path;
-	public static Map<String, List<String>> serverUrlMap=new HashMap<String, List<String>>(16);
 	
 	public void intiPath(String  path) {
 		RpcConfig.path=path;
@@ -75,36 +72,16 @@ public class RpcConfig {
 			}
 		}
 		//添加子节点
-		String nodeData=JSON.toJSONString(new nodeData(manager.getIp(), port, className));
+		String nodeData=JSON.toJSONString(new nodeData(RpcClientManager.getIp(), port, className));
 		String implPath=manager.create(url+"/"+className, nodeData);
-		String tempPath=manager.create(url+"/"+className+"/"+getServerUrlSize(url), nodeData);
-		if(!StringUtils.isEmpty(tempPath)) {
-			putServerUrl(url, tempPath);
-		}
+		String tempPath=manager.createTemp(url+"/"+className+"/"+getServerUrlIndex(implPath), nodeData);
+		log.debug("service defind url: "+tempPath);
 	}
 	
-	public static void putServerUrl(String url,String path) throws Exception {
-		List<String> list = getServerUrl(url);
-		if(list.contains(path)) {
-			throw new Exception("node  add repeat exception");
-		}
-		list.add(path);
-		serverUrlMap.put(url, list);
-	}
-	public static List<String> getServerUrl(String url) {
-		List<String> list = serverUrlMap.get(url);
-		if(list==null) {
-			list=new ArrayList<String>();
-			serverUrlMap.put(url, list);
-		}
-		return list;
-	}
 	public static List<String> getInitServerUrl(String url){
-		List<String> list = getServerUrl(url);
-		if(list.isEmpty()) {
+		List<String> list = new LinkedList<String>();
 			try {
 				list = getManager().getChildrenPath(url, null);
-				serverUrlMap.put(url, list);
 			} catch (KeeperException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -115,27 +92,69 @@ public class RpcConfig {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
 		return list;
 	}
 	
-	public static int getServerUrlSize(String url) {
-		return getServerUrl(url).size();
+	public static long getServerUrlIndex(String url) {
+		Set<Long> list=new HashSet<Long>();
+		try {
+			List<String> nodes = getManager().getChildrenNode(url, null);
+			for(String s:nodes) {
+				list.add(Long.valueOf(s));
+			}
+		} catch (KeeperException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return getNullIndex(list);
 	}
 	
-	public static void removeServerPath(String url,String path) {
-		List<String> list = getServerUrl(url);
-		list.remove(path);
-		serverUrlMap.put(url, list);
+	/**
+	 * 获取节点的空位序列号
+	* <p>Title: getNullIndex</p>
+	* <p>Description: </p>
+	* @param list
+	* @return
+	 */
+	public static long getNullIndex(Set<Long> list) {
+		if(list==null || list.isEmpty()) {
+			return 0;
+		}
+		long index=0;
+		for(int i=0;i<list.size();i++) {
+			if(list.contains(index)) {
+				index++;
+			}else {
+				break;
+			}
+		}
+		return index;
 	}
 	
+	/**
+	 * 获取节点序号
+	* <p>Title: getRootPathIndex</p>
+	* <p>Description: </p>
+	* @param manager
+	* @param ulist
+	* @return
+	* @throws KeeperException
+	* @throws InterruptedException
+	* @throws IOException
+	 */
 	private static int getRootPathIndex(RpcClientManager manager, String [] ulist) throws KeeperException, InterruptedException, IOException {
 		for(int i=0;i<ulist.length;i++) {
 			if(manager.exists(getPath(ulist,i))==null){
 				return i;
 			}
 		}
-		return ulist.length-1;
+		return ulist.length>0?0: ulist.length-1;
 	}
 	
 	private static String getPath(String [] ulist,int i) {
