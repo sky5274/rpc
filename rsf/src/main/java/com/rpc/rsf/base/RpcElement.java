@@ -42,22 +42,19 @@ public class RpcElement {
 		StringBuffer sbf=new StringBuffer();
 		StringBuffer err=new StringBuffer();
 		if(StringUtils.isEmpty(group)) {
-			err.append("group");
+			err.append("/group");
 		}else {
 			sbf.append("/"+group);
 		}
 		if(StringUtils.isEmpty(type)) {
-			err.append("type");
+			err.append("/type");
 		}else {
 			sbf.append("/"+type);
 		}
 		if(StringUtils.isEmpty(version)) {
-			err.append("version");
+			err.append("/version");
 		}else {
 			sbf.append("/"+version);
-		}
-		if(StringUtils.isEmpty(id)) {
-			err.append("id");
 		}
 		if(err.toString().length()>0) {
 			throw new IllegalArgumentException(err.toString()+"must not empty");

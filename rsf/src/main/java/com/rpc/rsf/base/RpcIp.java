@@ -3,7 +3,7 @@ package com.rpc.rsf.base;
 import java.io.Serializable;
 
 /**
- * 记录
+ * rpc 节点记录
  *<p>Title: RcpIp.java</p>
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2017</p>
