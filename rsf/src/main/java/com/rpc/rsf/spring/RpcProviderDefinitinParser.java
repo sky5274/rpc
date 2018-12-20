@@ -2,19 +2,16 @@ package com.rpc.rsf.spring;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.w3c.dom.Element;
 import com.rpc.rsf.base.RpcConfig;
 import com.rpc.rsf.base.RpcElement;
-import com.rpc.rsf.provide.ProvideServer;
-import com.rpc.rsf.provide.ProvideServiceTask;
+import com.rpc.rsf.provide.ProviderServer;
+import com.rpc.rsf.provide.ProviderServiceTask;
 
 /**
  * rpc interfase service provide parser
@@ -27,16 +24,18 @@ import com.rpc.rsf.provide.ProvideServiceTask;
  */
 public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 	private Log logger=LogFactory.getLog(getClass());
-
+	
+	@SuppressWarnings("unused")
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		registProvideServer(parserContext);
 		try {
 			RpcElement rpcEle = getRpcElement(element);
 			logger.info("rpt provider load bean name :"+rpcEle.getId()+">> class :"+rpcEle.getClassName());
 			String url = rpcEle.writeUrl();
+		
 			Class<?> clazz = Class.forName(rpcEle.getClassName());
 			//ProvideServer provideServer=applicationContext.getBean(ProvideServer.class);
-			RpcConfig.regist(url,rpcEle.getClassName(),new ProvideServer().getPort());
+			RpcConfig.regist(url,rpcEle.getClassName(),new ProviderServer().getPort());
 			//return registBean(rpcEle.getId(),clazz,parserContext);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -61,13 +60,13 @@ public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 	
 	private void registProvideServer(ParserContext parserContext) {
 		try {
-			if(parserContext.getRegistry().getBeanDefinition(ProvideServer.class.getSimpleName())==null) {
-				registBean(ProvideServer.class.getSimpleName(), ProvideServer.class, parserContext);
-				registBean(ProvideServiceTask.class.getSimpleName(), ProvideServiceTask.class, parserContext);
+			if(parserContext.getRegistry().getBeanDefinition(ProviderServer.class.getSimpleName())==null) {
+				registBean(ProviderServer.class.getSimpleName(), ProviderServer.class, parserContext);
+				registBean(ProviderServiceTask.class.getSimpleName(), ProviderServiceTask.class, parserContext);
 			}
 		} catch (Exception e) {
-			registBean(ProvideServer.class.getSimpleName(), ProvideServer.class, parserContext);
-			registBean(ProvideServiceTask.class.getSimpleName(), ProvideServiceTask.class, parserContext);
+			registBean(ProviderServer.class.getSimpleName(), ProviderServer.class, parserContext);
+			registBean(ProviderServiceTask.class.getSimpleName(), ProviderServiceTask.class, parserContext);
 		}
 	}
 	
