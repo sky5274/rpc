@@ -22,7 +22,7 @@ import com.rpc.rsf.base.ResouceProperties;
  * @author sky
  * @date 2018年10月13日
  */
-public class ProvideServer implements ApplicationContextAware{
+public class ProviderServer implements ApplicationContextAware{
 	private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	private Log log=LogFactory.getLog(getClass());
 	private int port=9000;
@@ -31,7 +31,7 @@ public class ProvideServer implements ApplicationContextAware{
 	private ApplicationContext applicationContext;
 	private String portKey="rpc.provider.server.port";
 	
-	public ProvideServer() {
+	public ProviderServer() {
 		String sys_port = System.getProperty(portKey);
 		if(StringUtils.isEmpty(sys_port)) {
 			String port_str = ResouceProperties.getProperty(portKey);
@@ -48,7 +48,7 @@ public class ProvideServer implements ApplicationContextAware{
 			}
 		}
 	};
-	public ProvideServer(int port) {
+	public ProviderServer(int port) {
 		this.port=port;
 	};
 	
@@ -77,7 +77,7 @@ public class ProvideServer implements ApplicationContextAware{
 			server=new ServerSocket(port);
 			log.info("rpc provider start , the port:"+port);
 			while(isOpen) {
-				ProvideServiceTask provideServiceTask =applicationContext.getBean(ProvideServiceTask.class);
+				ProviderServiceTask provideServiceTask =applicationContext.getBean(ProviderServiceTask.class);
 				 executor.execute(provideServiceTask.append(server.accept()));
 			}
 		} catch (IOException e) {

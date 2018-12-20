@@ -5,16 +5,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
 import com.alibaba.fastjson.JSON;
 import com.rpc.rsf.base.Result;
-import com.rpc.rsf.base.RpcClientManager;
 import com.rpc.rsf.base.RpcRequest;
 
 
@@ -27,10 +24,10 @@ import com.rpc.rsf.base.RpcRequest;
  * @author sky
  * @date 2018年10月13日
  */
-public class ProvideServiceTask implements Runnable ,ApplicationContextAware{
+public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 	private Socket clent;
 	private ApplicationContext applicationContext;
-	private static  Log log=LogFactory.getLog(ProvideServiceTask.class);
+	private static  Log log=LogFactory.getLog(ProviderServiceTask.class);
 
 	public void run() {
 		ObjectInputStream input = null;
@@ -86,7 +83,7 @@ public class ProvideServiceTask implements Runnable ,ApplicationContextAware{
 		}
 	}
 	
-	public ProvideServiceTask append(Socket clent) {
+	public ProviderServiceTask append(Socket clent) {
 		this.clent=clent;
 		return this;
 	}
