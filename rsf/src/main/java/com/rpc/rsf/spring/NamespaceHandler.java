@@ -13,9 +13,12 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  */
 public class NamespaceHandler extends NamespaceHandlerSupport {
 	public void init() {
+		//注册用于解析<rpc:scan>的解析器
+		registerBeanDefinitionParser("scan", new SpringRpcScannerParse());
 		//注册用于解析<rpc:consumer>的解析器
 		registerBeanDefinitionParser("consumer", new RpcConsumerDefinitionParser());
 		//注册用于解析<rpc:provider>的解析器
 		registerBeanDefinitionParser("provider", new RpcProviderDefinitinParser());
+		
 	}
 }
