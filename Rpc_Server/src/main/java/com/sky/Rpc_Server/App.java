@@ -6,7 +6,8 @@ import java.util.Map;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.rpc.rsf.provide.ProvideServer;
+import com.rpc.rsf.provide.ProviderServer;
+import com.sky.service.TestService;
 
 /**
  * demo to rpc provide
@@ -31,7 +32,9 @@ public class App
     	String port = System.getProperty("rpc.provider.server.port");
     	System.err.println("rpc port def:"+port);
     	ApplicationContext application =new ClassPathXmlApplicationContext("classpath:application.xml");
-        ProvideServer provideServer = application.getBean(ProvideServer.class);
+    	TestService testService = application.getBean(TestService.class);
+    	System.err.println(testService.test("tome say goods "));
+        ProviderServer provideServer = application.getBean(ProviderServer.class);
         provideServer.start();
     }
 }
