@@ -2,12 +2,10 @@ package com.sky.Rpc_Server;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
+import org.springframework.util.StringUtils;
 import com.rpc.rsf.provide.ProviderServer;
-import com.sky.service.TestService;
 
 /**
  * demo to rpc provide
@@ -25,15 +23,13 @@ public class App
     		}
     	}
     	String def_port="9008";
-//    	if(!StringUtils.isEmpty(argMap.get("port"))) {
-//    		def_port=argMap.get("port");
-//    	}
+    	if(!StringUtils.isEmpty(argMap.get("port"))) {
+    		def_port=argMap.get("port");
+    	}
     	System.setProperty("rpc.provider.server.port", def_port);
     	String port = System.getProperty("rpc.provider.server.port");
     	System.err.println("rpc port def:"+port);
     	ApplicationContext application =new ClassPathXmlApplicationContext("classpath:application.xml");
-    	TestService testService = application.getBean(TestService.class);
-    	System.err.println(testService.test("tome say goods "));
         ProviderServer provideServer = application.getBean(ProviderServer.class);
         provideServer.start();
     }
