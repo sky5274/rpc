@@ -25,7 +25,7 @@ import com.rpc.rsf.base.RpcRequest;
  * @date 2018年10月13日
  */
 public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
-	private Socket clent;
+	private Socket client;
 	private ApplicationContext applicationContext;
 	private static  Log log=LogFactory.getLog(ProviderServiceTask.class);
 
@@ -34,7 +34,7 @@ public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 		ObjectOutputStream output = null;
 		try {
 			// 2.将客户端发送的码流反序列化成对象，反射调用服务实现者，获取执行结果
-			input = new ObjectInputStream(clent.getInputStream());
+			input = new ObjectInputStream(client.getInputStream());
 			RpcRequest request = (RpcRequest) input.readObject();
 			log.info(">>get request:"+JSON.toJSONString(request));
 			Object bean = applicationContext.getBean(Class.forName(request.getClassName()));
@@ -43,7 +43,7 @@ public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 			}
 
 			// 3.将执行结果反序列化，通过socket发送给客户端
-			output = new ObjectOutputStream(clent.getOutputStream());
+			output = new ObjectOutputStream(client.getOutputStream());
 			Class<?> serviceClass=bean.getClass();
 			Method method = serviceClass.getMethod(request.getMethodName(), request.getParameterTypes());
 			try {
@@ -73,18 +73,19 @@ public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 					e.printStackTrace();
 				}
 			}
-			if (clent != null) {
-				try {
-					clent.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+			if (client != null) {
+					try {
+						client.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 			}
 		}
 	}
 	
-	public ProviderServiceTask append(Socket clent) {
-		this.clent=clent;
+	public ProviderServiceTask append(Socket client) {
+		this.client=client;
 		return this;
 	}
 
