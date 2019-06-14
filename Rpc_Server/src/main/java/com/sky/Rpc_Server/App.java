@@ -30,7 +30,5 @@ public class App
     	String port = System.getProperty("rpc.provider.server.port");
     	System.err.println("rpc port def:"+port);
     	ApplicationContext application =new ClassPathXmlApplicationContext("classpath:application.xml");
-        ProviderServer provideServer = application.getBean(ProviderServer.class);
-        provideServer.start();
     }
 }

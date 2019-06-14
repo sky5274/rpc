@@ -11,6 +11,6 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
 	<context:component-scan base-package="com.sky" ></context:component-scan>
-	<rpc:provider id="userService" class="com.sky.server.UserServiceImpl" group="test" version="1_dev"/>
+	<rpc:provider id="userService" class="com.sky.server.UserServiceImpl" interface="com.sky.service.UserService" group="test" version="1_dev"/>
 	<rpc:scan base-package="com.sky"></rpc:scan>
 </beans>
