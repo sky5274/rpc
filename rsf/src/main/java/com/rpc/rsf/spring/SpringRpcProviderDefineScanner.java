@@ -2,7 +2,6 @@ package com.rpc.rsf.spring;
 
 import java.util.Arrays;
 import java.util.Set;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -11,12 +10,12 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
-
 import com.rpc.rsf.base.RpcConfig;
 import com.rpc.rsf.base.RpcProvider;
 import com.rpc.rsf.provide.ProviderServer;
-import com.rpc.rsf.provide.ProviderServiceFactory;
-import com.rpc.rsf.provide.ProviderServiceTask;
+import com.rpc.rsf.provide.netty.ProviderNettyServer;
+import com.rpc.rsf.provide.socket.ProviderSocketServer;
+import com.rpc.rsf.provide.socket.ProviderSocketServerTask;
 
 @Component
 public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScanner {
@@ -52,14 +51,41 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 				logger.info("getBean: { id: "+beand.getBeanName()+", class ："+beand.getBeanDefinition().getBeanClassName()+"}");
 				registRpcProvider(beand);
 			}
-			try {
-				if(this.registry.getBeanDefinition(ProviderServer.class.getSimpleName())==null) {
-					registBean(ProviderServiceTask.class.getSimpleName(), ProviderServiceTask.class);
-				}
-			} catch (Exception e) {
-				logger.error(e.getMessage(),e);
-			}
+			//注册服务
+			registServer();
 		}
+	}
+	
+	private void registServer() {
+		if(RpcConfig.isSocketServer()) {
+			registSocketProvideService();
+		}else {
+			registNettyProvideService();
+		}
+		regisDefindetBean(ApplicationReadListener.class);
+	}
+	
+	private void regisDefindetBean(Class<?> clazz) {
+		regisDefindetBean( clazz,clazz.getSimpleName());
+	}
+	private void regisDefindetBean(Class<?> clazz,String clazzName) {
+		try {
+			if(registry.getBeanDefinition(clazzName)==null) {
+				registBean(clazzName, clazz);
+			}
+		} catch (Throwable e) {
+			registBean(clazzName, clazz);
+		}
+	}
+	
+	private void registNettyProvideService() {
+		regisDefindetBean(ProviderNettyServer.class,ProviderServer.class.getSimpleName());
+		
+	}
+
+	private void registSocketProvideService() {
+		regisDefindetBean(ProviderSocketServer.class,ProviderServer.class.getSimpleName());
+		regisDefindetBean(ProviderSocketServerTask.class);
 	}
 	
 	/**
@@ -75,7 +101,12 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 			Class<?> clazz = Class.forName(className);
 			RpcProvider provider = clazz.getDeclaredAnnotation(RpcProvider.class);
 			String url = getNodeUrl(provider);
-			RpcConfig.regist(url, className, ProviderServiceFactory.getPort());
+			Class<?>[] interfaceTypes=clazz.getInterfaces();
+			if(interfaceTypes!=null) {
+				for(Class<?> inter:interfaceTypes) {
+					RpcConfig.regist(url,inter.getTypeName() ,className, ProviderServer.getPort());
+				}
+			}
 		} catch (ClassNotFoundException e) {
 			logger.warn(e.getMessage(),e);
 		} catch (Exception e) {

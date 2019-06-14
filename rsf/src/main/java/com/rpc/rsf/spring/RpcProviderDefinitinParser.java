@@ -11,10 +11,12 @@ import org.w3c.dom.Element;
 import com.rpc.rsf.base.RpcConfig;
 import com.rpc.rsf.base.RpcElement;
 import com.rpc.rsf.provide.ProviderServer;
-import com.rpc.rsf.provide.ProviderServiceTask;
+import com.rpc.rsf.provide.netty.ProviderNettyServer;
+import com.rpc.rsf.provide.socket.ProviderSocketServer;
+import com.rpc.rsf.provide.socket.ProviderSocketServerTask;
 
 /**
- * rpc interfase service provide parser
+ * rpc socket interface service provide parser
  *<p>Title: RpcProviderDefinitinParser.java</p>
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2017</p>
@@ -35,7 +37,7 @@ public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 		
 			Class<?> clazz = Class.forName(rpcEle.getClassName());
 			//ProvideServer provideServer=applicationContext.getBean(ProvideServer.class);
-			RpcConfig.regist(url,rpcEle.getClassName(),new ProviderServer().getPort());
+			RpcConfig.regist(url,rpcEle.getInterfaceName(),rpcEle.getClassName(),ProviderServer.getPort());
 			//return registBean(rpcEle.getId(),clazz,parserContext);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -59,15 +61,35 @@ public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 	}
 	
 	private void registProvideServer(ParserContext parserContext) {
-		try {
-			if(parserContext.getRegistry().getBeanDefinition(ProviderServer.class.getSimpleName())==null) {
-				registBean(ProviderServer.class.getSimpleName(), ProviderServer.class, parserContext);
-				registBean(ProviderServiceTask.class.getSimpleName(), ProviderServiceTask.class, parserContext);
-			}
-		} catch (Exception e) {
-			registBean(ProviderServer.class.getSimpleName(), ProviderServer.class, parserContext);
-			registBean(ProviderServiceTask.class.getSimpleName(), ProviderServiceTask.class, parserContext);
+		if(RpcConfig.isSocketServer()) {
+			registSocketProvideService(parserContext);
+		}else {
+			registNettyProvideService(parserContext);
 		}
+		registBean(parserContext,ApplicationReadListener.class);
+	}
+	
+	private void registBean(ParserContext parserContext,Class<?> clazz) {
+		registBean(parserContext, clazz,clazz.getSimpleName());
+	}
+	private void registBean(ParserContext parserContext,Class<?> clazz,String clazzName) {
+		try {
+			if(parserContext.getRegistry().getBeanDefinition(clazzName)==null) {
+				registBean(clazzName, clazz, parserContext);
+			}
+		} catch (Throwable e) {
+			registBean(clazzName, clazz, parserContext);
+		}
+	}
+	
+	private void registNettyProvideService(ParserContext parserContext) {
+		registBean(parserContext,ProviderNettyServer.class,ProviderServer.class.getSimpleName());
+		
+	}
+
+	private void registSocketProvideService(ParserContext parserContext) {
+		registBean(parserContext,ProviderSocketServer.class,ProviderServer.class.getSimpleName());
+		registBean(parserContext,ProviderSocketServerTask.class);
 	}
 	
 	private RpcElement getRpcElement(Element element) throws ClassNotFoundException {
@@ -75,6 +97,7 @@ public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 		rpcEle.setType("provider");
 		rpcEle.setId(element.getAttribute("id"));
 		rpcEle.setClassName(element.getAttribute("class"));
+		rpcEle.setInterfaceName(element.getAttribute("interface"));
 		rpcEle.setGroup(element.getAttribute("group"));
 		rpcEle.setVersion(element.getAttribute("version"));
 		return rpcEle;
