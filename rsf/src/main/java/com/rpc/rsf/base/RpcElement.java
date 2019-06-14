@@ -5,6 +5,8 @@ import org.springframework.util.StringUtils;
 public class RpcElement {
 	private String id;
 	private String type;
+	private String interfaceName;
+	private String target;
 	private String className;
 	private String group;
 	private String version;
@@ -56,9 +58,27 @@ public class RpcElement {
 		}else {
 			sbf.append("/"+version);
 		}
+//		if(!StringUtils.isEmpty(interfaceName)) {
+//			sbf.append("/").append(interfaceName);
+//		}
+//		if(!StringUtils.isEmpty(target)) {
+//			sbf.append("/").append(target);
+//		}
 		if(err.toString().length()>0) {
 			throw new IllegalArgumentException(err.toString()+"must not empty");
 		}
 		return sbf.toString();
+	}
+	public String getInterfaceName() {
+		return interfaceName;
+	}
+	public void setInterfaceName(String interfaceName) {
+		this.interfaceName = interfaceName;
+	}
+	public String getTarget() {
+		return target;
+	}
+	public void setTarget(String target) {
+		this.target = target;
 	}
 }
