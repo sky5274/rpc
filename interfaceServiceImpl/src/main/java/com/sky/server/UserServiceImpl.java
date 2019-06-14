@@ -3,6 +3,7 @@ package com.sky.server;
 import org.springframework.stereotype.Service;
 
 import com.sky.exception.OneException;
+import com.sky.service.TestService;
 import com.sky.service.UserService;
 
 /**
@@ -25,5 +26,10 @@ public class UserServiceImpl implements UserService
 	public String getUserAddr(String name) throws OneException {
 		throw new OneException("exception test");
 		//throw new Exception("exception test");
+	}
+
+	public String testSevice(TestService test) {
+		System.err.println("the testservice is： "+test);
+		return test.test(getUserInfo("test"));
 	}
 }

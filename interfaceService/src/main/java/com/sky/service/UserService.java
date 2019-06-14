@@ -18,4 +18,6 @@ public interface UserService {
 	
 	public String getUserInfo(String name);
 	public String getUserAddr(String name) throws OneException;
+	
+	public String testSevice(TestService test);
 }
