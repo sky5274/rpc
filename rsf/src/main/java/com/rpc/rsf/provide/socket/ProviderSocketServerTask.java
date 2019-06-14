@@ -1,18 +1,21 @@
-package com.rpc.rsf.provide;
+package com.rpc.rsf.provide.socket;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.Socket;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.rpc.rsf.base.Result;
+import com.rpc.rsf.base.RpcCallBack;
 import com.rpc.rsf.base.RpcRequest;
+import com.rpc.rsf.provide.ProviderMethodInvoker;
 
 
 /**
@@ -24,10 +27,10 @@ import com.rpc.rsf.base.RpcRequest;
  * @author sky
  * @date 2018年10月13日
  */
-public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
+@Component
+public class ProviderSocketServerTask implements Runnable{
 	private Socket client;
-	private ApplicationContext applicationContext;
-	private static  Log log=LogFactory.getLog(ProviderServiceTask.class);
+	private static  Log log=LogFactory.getLog(ProviderSocketServerTask.class);
 
 	public void run() {
 		ObjectInputStream input = null;
@@ -35,27 +38,27 @@ public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 		try {
 			// 2.将客户端发送的码流反序列化成对象，反射调用服务实现者，获取执行结果
 			input = new ObjectInputStream(client.getInputStream());
-			RpcRequest request = (RpcRequest) input.readObject();
-			log.info(">>get request:"+JSON.toJSONString(request));
-			Object bean = applicationContext.getBean(Class.forName(request.getClassName()));
-			if (bean == null) {
-				throw new ClassNotFoundException(request.getClassName() + " not found");
-			}
-
-			// 3.将执行结果反序列化，通过socket发送给客户端
 			output = new ObjectOutputStream(client.getOutputStream());
-			Class<?> serviceClass=bean.getClass();
-			Method method = serviceClass.getMethod(request.getMethodName(), request.getParameterTypes());
-			try {
-				long starttime = System.currentTimeMillis();
-				Object result = method.invoke(serviceClass.newInstance(), request.getArgs());
-				long endtime = System.currentTimeMillis();
-				log.info(String.format(serviceClass.getName()+"."+method.getName()+" cost time: %ds",(endtime-starttime)/1000));
-				output.writeObject(new Result<Object>(result));
-			} catch (Exception e) {
-				output.writeObject(new Result<Object>(e));
+			RpcRequest request = (RpcRequest) input.readObject();
+			int i=0;
+			Object[] args  =request.getArgs();
+			for(Object arg:args) {
+				if(arg!=null) {
+					if(arg instanceof RpcCallBack) {
+						args[i]=getArgCallProxy(request.getParameterTypes()[i],input,output,i,request.getRequestId());
+					}
+				}
+				i++;
 			}
-
+			request.setArgs(args);
+			log.info(">>get request:"+JSON.toJSONString(request));
+			// 3.将执行结果反序列化，通过socket发送给客户端
+			try {
+				output.writeObject(new Result<Object>(request.getRequestId(), ProviderMethodInvoker.invoke(client.getLocalSocketAddress(),request)));
+			} catch (Throwable e) {
+				output.writeObject(new Result<>(request.getRequestId(), e));
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -84,13 +87,30 @@ public class ProviderServiceTask implements Runnable ,ApplicationContextAware{
 		}
 	}
 	
-	public ProviderServiceTask append(Socket client) {
-		this.client=client;
-		return this;
+	@SuppressWarnings("unchecked")
+	private <T> T getArgCallProxy(final Class<T> serviceInterface, final ObjectInputStream input, final ObjectOutputStream output, final int i,final String requestId) {
+		return (T) Proxy.newProxyInstance(FactoryBean.class.getClassLoader(), new Class<?>[]{serviceInterface},
+				new InvocationHandler() {
+					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+						log.debug("rpc socket server call back,class: "+serviceInterface.getName()+" method: "+method.getName());
+						RpcRequest req = new RpcRequest(serviceInterface.getName()+"_"+i, method.getName(), method.getParameterTypes(), args);
+						String id = requestId+"_"+serviceInterface.getName()+"_"+i;
+						req.setRequestId(id);
+						//代理调用参数的方法
+						output.writeObject(req);
+						Result<?> res = (Result<?>) input.readObject();
+						if(res.hasException()) {
+							throw res.getException();
+						}
+						return res.getData();
+					}
+			
+		});
 	}
 
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext=applicationContext;
+	public ProviderSocketServerTask append(Socket client) {
+		this.client=client;
+		return this;
 	}
 
 }
