@@ -12,7 +12,7 @@ public class SpringRpcConsumerRegister implements ImportBeanDefinitionRegistrar 
 	private Log log=LogFactory.getLog(SpringRpcConsumerRegister.class);
 	
 	public void registerBeanDefinitions(AnnotationMetadata arg0, BeanDefinitionRegistry arg1) {
-		log.info("rpc regist start");
+		log.info("rpc regist consumer start");
 		
 	}
 
