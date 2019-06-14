@@ -1,6 +1,5 @@
 package com.rpc.rsf.base;
 
-import java.io.Serializable;
 
 /**
  * rpc client request body
@@ -12,7 +11,7 @@ import java.io.Serializable;
  * @date 2018年10月15日
  */
 
-public class RpcRequest implements Serializable{
+public class RpcRequest extends RpcBaseBean{
 	
 	/***/
 	private static final long serialVersionUID = 1L;
@@ -26,6 +25,7 @@ public class RpcRequest implements Serializable{
 	private Class<?>[] parameterTypes;
 	public RpcRequest() {}
 	public RpcRequest(String className, String methodName, Class<?>[] parameterTypes, Object[] args) throws ClassNotFoundException {
+		super(className+"_"+System.currentTimeMillis());
 		this.className=className;
 		this.methodName=methodName;
 		this.setParameterTypes(parameterTypes);

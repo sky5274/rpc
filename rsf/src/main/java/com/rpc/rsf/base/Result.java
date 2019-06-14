@@ -1,21 +1,22 @@
 package com.rpc.rsf.base;
 
-import java.io.Serializable;
 
-public class Result <T> implements Serializable{
+public class Result <T> extends RpcBaseBean{
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	private boolean hasExp=false;
 	private T data;
-	private Exception exp;
+	private Throwable exp;
 	
-	public Result(T res){
+	public Result(String id,T res){
+		super(id);
 		this.data=res;
 	}
 	
-	public Result(Exception e) {
+	public Result(String id,Throwable e) {
+		super(id);
 		hasExp=true;
 		this.exp=e;
 	}
@@ -27,7 +28,7 @@ public class Result <T> implements Serializable{
 	public T getData() {
 		return data;
 	}
-	public Exception getException() {
+	public Throwable getException() {
 		return exp;
 	}
 }
