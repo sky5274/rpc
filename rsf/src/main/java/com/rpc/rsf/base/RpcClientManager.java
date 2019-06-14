@@ -29,9 +29,18 @@ public class RpcClientManager {
 	private String tipTitle="rpc center ";
 	
 	public RpcClientManager() throws IOException, KeeperException, InterruptedException {
+		initDefNod();
 		zkClient=getZookeeper();
 	}
+	private void initDefNod() {
+		String node = ResouceProperties.getProperty("rpc.provide.node.prefix");
+		if(!StringUtils.isEmpty(node)) {
+			defaut_pref=node;
+		}
+		
+	}
 	public RpcClientManager(String path) throws IOException, KeeperException, InterruptedException {
+		initDefNod();
 		log.debug(tipTitle+"init");
 		this.url=path;
 		zkClient=getZookeeper();
