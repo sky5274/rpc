@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,6 +11,8 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
+import org.springframework.util.StringUtils;
+
 import com.alibaba.fastjson.JSON;
 
 /**
@@ -30,6 +31,10 @@ public class RpcConfig {
 	
 	public void intiPath(String  path) {
 		RpcConfig.path=path;
+	}
+	
+	public static boolean isSocketServer() {
+		return "socket".equals(ResouceProperties.getProperty("rpc.server.type"));
 	}
 	
 	public static RpcClientManager getManager() throws IOException, KeeperException, InterruptedException {
@@ -58,7 +63,7 @@ public class RpcConfig {
 	 * @param className 
 	 * @throws Exception 
 	 */
-	public static void regist(String url, String className,int port) throws Exception {
+	public static void regist(String url, String className,String targetName,int port) throws Exception {
 		String[] uarray = url.substring(1).split("/");
 		log.info("node url:"+url+" --"+JSON.toJSONString(uarray));
 		RpcClientManager manager = getManager();
@@ -72,9 +77,11 @@ public class RpcConfig {
 			}
 		}
 		//添加子节点
-		String nodeData=JSON.toJSONString(new nodeData(RpcClientManager.getIp(), port, className));
-		String implPath=manager.create(url+"/"+className, nodeData);
-		String tempPath=manager.createTemp(url+"/"+className+"/"+getServerUrlIndex(implPath), nodeData);
+		String nodeData=JSON.toJSONString(new nodeData(RpcClientManager.getIp(), port, className,targetName));
+		String serverurl=url+"/"+className;
+			String implPath=manager.create(serverurl, serverurl);
+			String tempPath = manager.createTemp(url+"/"+className+"/"+getServerUrlIndex(implPath), nodeData);
+		
 		log.debug("service defind url: "+tempPath);
 	}
 	
@@ -171,11 +178,13 @@ public class RpcConfig {
 	public static class nodeData {
 		private String ip;
 		private int port;
+		private String intfaceName;
 		private String className;
 		public nodeData() {}
-		public nodeData(String ip,int port,String className) throws ClassNotFoundException {
+		public nodeData(String ip,int port,String intfaceName,String className) throws ClassNotFoundException {
 			this.ip=ip;
 			this.port=port;
+			this.setIntfaceName(intfaceName);
 			this.setClassName(className);;
 		}
 		
@@ -197,6 +206,12 @@ public class RpcConfig {
 		public void setClassName(String className) throws ClassNotFoundException {
 			this.className = className;
 		}
+		public String getIntfaceName() {
+			return intfaceName;
+		}
+		public void setIntfaceName(String intfaceName) {
+			this.intfaceName = intfaceName;
+		}
 		
 	}
 
@@ -211,20 +226,19 @@ public class RpcConfig {
 		log.debug("rpc config get server request mapper:"+url);
 		List<String> list=new LinkedList<String>();
 		try {
-			list = clientManange.getChildrenPath(url, null);
-		} catch (KeeperException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e1) {
+			list = getManager().getChildrenPath(url, null);
+		} catch (KeeperException |InterruptedException |IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		if(!list.isEmpty()) {
-			Random random = new Random(list.size());
-			String upath = list.get((int) Math.round(random.nextDouble())-1);
+			int randInt = (int) Math.abs(Math.random()*list.size());
+			if(randInt==list.size()) {
+				randInt--;
+			}else if(randInt<0) {
+				randInt=0;
+			}
+			String upath = list.get(randInt);
 			try {
 				String data = new String(getManager().getData(upath, new Watcher() {
 					
@@ -237,15 +251,55 @@ public class RpcConfig {
 				}, new Stat()));
 				log.debug(String.format("rpc config get random client node:[path:%s,data:%s]",upath,data));
 				return JSON.parseObject(data,nodeData.class);
-			} catch (KeeperException e) {
+			} catch (KeeperException | InterruptedException | IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	public static nodeData getRandomServer(String url, String interfaceImpl) {
+		if(StringUtils.isEmpty(interfaceImpl)) {
+			return getRandomServer(url);
+		}
+		log.debug("rpc config get server request mapper:"+url);
+		List<String> list=new LinkedList<String>();
+		try {
+			list = getManager().getChildrenPath(url, null);
+		} catch (KeeperException |InterruptedException |IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if(!list.isEmpty()) {
+			
+			List<nodeData> nodes=new LinkedList<>();
+			for(String upath:list) {
+				System.err.println(upath);
+				String data;
+				try {
+					data = new String(getManager().getData(upath, null, new Stat()));
+					if(!StringUtils.isEmpty(data)) {
+						nodeData node = JSON.parseObject(data,nodeData.class);
+						System.err.println(JSON.toJSONString(node));
+						System.err.println(interfaceImpl);
+						if(node.getClassName().equals(interfaceImpl)) {
+							nodes.add(node);
+						}
+					}
+				} catch (KeeperException | InterruptedException | IOException e) {
+					e.printStackTrace();
+				}
+			}
+			System.err.println(nodes);
+			if(!nodes.isEmpty()) {
+				int randInt = (int) Math.abs(Math.random()*nodes.size());
+				if(randInt==nodes.size()) {
+					randInt--;
+				}else if(randInt<0) {
+					randInt=0;
+				}
+				return nodes.get(randInt);
 			}
 		}
 		return null;
