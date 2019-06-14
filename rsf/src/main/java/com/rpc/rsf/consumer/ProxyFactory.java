@@ -11,12 +11,12 @@ import org.springframework.beans.factory.FactoryBean;
 import com.alibaba.fastjson.JSON;
 import com.rpc.rsf.base.RpcConfig;
 import com.rpc.rsf.base.RpcConfig.nodeData;
+import com.rpc.rsf.base.RpcElement;
 
 public class ProxyFactory<T> implements FactoryBean<T> {
 	private static  Log log=LogFactory.getLog(ProxyFactory.class);
 	private Class<T> interfaceClass;
-	private String interfaceImpl;
-	private String mapperUrl;
+	private RpcElement node;
 	public Class<T> getInterfaceClass() {
 		return interfaceClass;
 	}
@@ -25,11 +25,11 @@ public class ProxyFactory<T> implements FactoryBean<T> {
 	}
 	public T getObject() throws Exception {
 		nodeData ip = getRandomIp();
-		log.debug("rpc proxy get random server:"+JSON.toJSONString(ip));
 		if(ip!=null) {
-			return (T) RpcProxy.getRemoteProxyObj(interfaceClass,new InetSocketAddress(ip.getIp(),ip.getPort()),interfaceImpl);
+			log.debug("rpc proxy get random server:"+JSON.toJSONString(ip));
+			return (T) RpcProxy.getRemoteProxyObj(interfaceClass,new InetSocketAddress(ip.getIp(),ip.getPort()),ip.getClassName());
 		}else {
-			return null;
+			throw new Exception("rpc system get no interface server");
 		}
 	}
 
@@ -43,18 +43,12 @@ public class ProxyFactory<T> implements FactoryBean<T> {
 	}
 	
 	public nodeData getRandomIp() throws KeeperException, InterruptedException, IOException {
-		return RpcConfig.getRandomServer(mapperUrl);
+		return RpcConfig.getRandomServer(node.writeUrl()+"/"+interfaceClass.getName(),node.getTarget());
 	}
-	public String getMapperUrl() {
-		return mapperUrl;
+	public RpcElement getNode() {
+		return node;
 	}
-	public void setMapperUrl(String mapperUrl) {
-		this.mapperUrl = mapperUrl;
-	}
-	public String getInterfaceImpl() {
-		return interfaceImpl;
-	}
-	public void setInterfaceImpl(String interfaceImpl) {
-		this.interfaceImpl = interfaceImpl;
+	public void setNode(RpcElement node) {
+		this.node = node;
 	}
 }

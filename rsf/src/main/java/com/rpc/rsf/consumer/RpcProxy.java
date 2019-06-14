@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import org.springframework.beans.factory.FactoryBean;
+import com.rpc.rsf.base.client.RpcClient;
 
 /**
  * rpc client proxy
@@ -24,7 +25,7 @@ public class RpcProxy{
 				new InvocationHandler() {
 					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 						try {
-							return new RpcClient<T>(addr).request(proxy,method,args,serviceInterface,null);
+							return new RpcClient<T>(addr).request(serviceInterface,method,args,null);
 						} catch (InvocationTargetException e){
 							//抛出造成的异常
 							throw e.getCause();
@@ -40,11 +41,22 @@ public class RpcProxy{
 				new InvocationHandler() {
 			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 				try {
-					return new RpcClient<T>(addr).request(proxy,method,args,serviceInterface,interfaceImpl);
+					return new RpcClient<T>(addr).request(serviceInterface,method,args,interfaceImpl);
 				} catch (InvocationTargetException e){
 					//抛出造成的异常
 					throw e.getCause();
 				}
+			}
+			
+		});
+	}
+	@SuppressWarnings("unchecked")
+	public static <T> T getNullProxyObj(final Class<?>... serviceInterfaces) {
+		// 1.将本地的接口调用转换成JDK的动态代理，在动态代理中实现接口的远程调用
+		return (T) Proxy.newProxyInstance(FactoryBean.class.getClassLoader(), serviceInterfaces,
+				new InvocationHandler() {
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				return null;
 			}
 			
 		});
