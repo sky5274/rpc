@@ -29,7 +29,6 @@ public class UserServiceImpl implements UserService
 	}
 
 	public String testSevice(TestService test) {
-		System.err.println("the testservice is： "+test);
-		return test.test(getUserInfo("test"));
+		return test.test("test");
 	}
 }
