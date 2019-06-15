@@ -26,6 +26,7 @@ public class RpcConsumerDefinitionParser implements BeanDefinitionParser  {
 	private Log logger=LogFactory.getLog(getClass());
 
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		registBean(parserContext,ApplicationClosedListener.class);
 		RpcElement rpcEle = getRpcElement(element);
 		logger.info("rpt consumer config regist bean:" +JSON.toJSONString(rpcEle));
 		Class<?> clazz;
@@ -50,6 +51,25 @@ public class RpcConsumerDefinitionParser implements BeanDefinitionParser  {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	private void registBean(ParserContext parserContext,Class<?> clazz) {
+		try {
+			if(parserContext.getRegistry().getBeanDefinition(clazz.getSimpleName())==null) {
+				registBean(clazz.getSimpleName(), clazz, parserContext);
+			}
+		} catch (Throwable e) {
+			registBean(clazz.getSimpleName(), clazz, parserContext);
+		}
+	}
+	
+	private GenericBeanDefinition registBean(String id, Class<?> intertface, ParserContext parserContext) {
+		logger.info("rpt consumer load bean name :"+id+">> class :"+intertface.getName());
+		BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(intertface);
+		GenericBeanDefinition definition = (GenericBeanDefinition) builder.getRawBeanDefinition();
+		definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
+		parserContext.getRegistry().registerBeanDefinition(id,definition);
+		return definition;
 	}
 	
 	/**

@@ -63,6 +63,7 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 			registNettyProvideService();
 		}
 		regisDefindetBean(ApplicationReadListener.class);
+		regisDefindetBean(ApplicationClosedListener.class);
 	}
 	
 	private void regisDefindetBean(Class<?> clazz) {

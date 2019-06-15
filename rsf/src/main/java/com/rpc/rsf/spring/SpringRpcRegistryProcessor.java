@@ -28,7 +28,6 @@ public class SpringRpcRegistryProcessor implements BeanFactoryPostProcessor,Appl
 
 	public void postProcessBeanDefinitionRegistry(ConfigurableListableBeanFactory  regist) throws BeansException {
 		log.info("rpc init regist");
-		System.err.println("prodvider  start");
 		SpringRpcProviderDefineScanner scan = new SpringRpcProviderDefineScanner((BeanDefinitionRegistry)regist);
 		 // 设置ApplicationContext
 		scan.setResourceLoader(this.applicationContext);
