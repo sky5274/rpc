@@ -33,7 +33,7 @@ public class ProviderMethodInvoker {
 			long starttime = System.currentTimeMillis();
 			Object result = method.invoke(bean, request.getArgs());
 			long endtime = System.currentTimeMillis();
-			log.info(String.format(serviceClass.getName()+"."+method.getName()+" cost time: %ds",(endtime-starttime)/1000));
+			log.info(String.format(serviceClass.getName()+"."+method.getName()+" cost time: %dms",(endtime-starttime)));
 			return result;
 		} catch (NoSuchMethodException |SecurityException e) {
 			e.printStackTrace();
