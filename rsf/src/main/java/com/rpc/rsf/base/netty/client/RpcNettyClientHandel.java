@@ -1,12 +1,17 @@
 package com.rpc.rsf.base.netty.client;
 
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import com.rpc.rsf.base.Result;
 import com.rpc.rsf.base.RpcRequest;
 import com.rpc.rsf.base.client.RpcClientHandel;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -24,11 +29,22 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 public class RpcNettyClientHandel implements RpcClientHandel{
     Log logger = LogFactory.getLog(this.getClass());
-    private EventLoopGroup group = new NioEventLoopGroup(1);
-    private Bootstrap bootstrap ;
-    NettyClientMessageHandler clientHandler =new NettyClientMessageHandler();
+    private static EventLoopGroup group = new NioEventLoopGroup(1);
+    private  Bootstrap bootstrap ;
+    static NettyClientMessageHandler clientHandler =new NettyClientMessageHandler();
+    
+    public static Map<Long, Channel> channelMap=new ConcurrentHashMap<>();
    
-    public void initBoot() {
+    public static Map<Long, Channel> getChannelMap() {
+		return channelMap;
+	}
+
+	public static void setChannelMap(Map<Long, Channel> channelMap) {
+		RpcNettyClientHandel.channelMap = channelMap;
+	}
+
+
+	public void initBoot() {
     	bootstrap= new Bootstrap();
     	bootstrap.group(group)
     	.channel(NioSocketChannel.class)
@@ -49,11 +65,28 @@ public class RpcNettyClientHandel implements RpcClientHandel{
     public Channel doConnect(InetSocketAddress address) throws InterruptedException {
     	if(bootstrap==null) {
     		initBoot();
-    		bootstrap.remoteAddress(address);
+//    		bootstrap.remoteAddress(address);
     	}
-        ChannelFuture future = bootstrap.connect();
-        Channel channel = future.sync().channel();
+    	
+    	long nowtime = System.currentTimeMillis();
+    	clearChannel(nowtime);
+    	
+    	ChannelFuture future = bootstrap.connect(address);
+    	Channel channel = future.sync().channel();
+        channelMap.put(nowtime, channel);
         return channel;
+    }
+    
+    private void clearChannel(long nowtime) {
+    	List<Long> list=new LinkedList<>();
+    	list.addAll(channelMap.keySet());
+    	for(Long time:list) {
+    		if((nowtime-time)>60*1000) {
+    			Channel channel = channelMap.get(time);
+    			channel.close();
+    			channelMap.remove(time);
+    		}
+    	}
     }
     
 	@SuppressWarnings("unchecked")

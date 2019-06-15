@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.locks.LockSupport;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -30,18 +32,19 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 	public static Map<String, SynchronousQueue<Result<?>>> argSyncObjectMap=new ConcurrentHashMap<>();
 
 	public void channelInactive(ChannelHandlerContext ctx) throws InterruptedException   {
-//		logger.info("客户端断开连接!"+ctx.channel().remoteAddress());
+		logger.info("客户端断开连接!"+ctx.channel().remoteAddress());
 		setThrowableInfo(new Throwable(ctx.channel().localAddress()+"连接关闭"));
-		ctx.channel().close();
+//		ctx.channel().close();
 	}
 	public void channelRead( ChannelHandlerContext ctx, Object msg) throws InterruptedException   {
 		if(msg instanceof RpcRequest) {
 			RpcRequest request=(RpcRequest) msg;
 			initRpcRequest(ctx,request);
 		}else if(msg instanceof Result) {
-			Result<?> res =(Result<?>) msg;
+			final Result<?> res =(Result<?>) msg;
 			SynchronousQueue<Result<?>> quene = argSyncObjectMap.get(res.getRequestId());
 			quene.put(res);
+			ctx.flush();
 		}
 	}
 	
@@ -64,7 +67,7 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 				for(Object arg:args) {
 					if(arg!=null) {
 						if(arg instanceof RpcCallBack) {
-							args[i]=getArgCallProxy(request.getParameterTypes()[i],ctx,i,request.getRequestId(),argSyncObjectMap);
+							args[i]=getArgCallProxy(request.getParameterTypes()[i],ctx,i,request.getRequestId());
 						}
 					}
 					i++;
@@ -78,28 +81,28 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 				i=0;
 				for(Object arg:request.getArgs()) {
 					if(arg instanceof RpcCallBack) {
-						clearObjectMap(request.getParameterTypes()[i],i,request.getRequestId(),argSyncObjectMap);
+						clearObjectMap(request.getParameterTypes()[i],i,request.getRequestId());
 					}
 					i++;
 				}
 				
 				ctx.writeAndFlush(result);
-				
+				ctx.flush();
 			}
 		});
 	}
 	
-	private void clearObjectMap(Class<?> serviceInterface, int i, String requestId,Map<String, SynchronousQueue<Result<?>>> argSyncObjectMap2) {
-		List<String> keys  =new LinkedList<>(argSyncObjectMap2.keySet());
+	private void clearObjectMap(Class<?> serviceInterface, int i, String requestId) {
+		List<String> keys  =new LinkedList<>(argSyncObjectMap.keySet());
 		String objkey=requestId+"_"+serviceInterface.getName()+"_"+i;
 		for(String key:keys) {
 			if(key.startsWith(objkey)) {
-				argSyncObjectMap2.remove(key);
+				argSyncObjectMap.remove(key);
 			}
 		}
 	}
 	@SuppressWarnings("unchecked")
-	private <T> T getArgCallProxy(final Class<?> serviceInterface, final ChannelHandlerContext ctx, final int i, final String requestId,final Map<String, SynchronousQueue<Result<?>>> argSyncObjectMap2) {
+	private <T> T getArgCallProxy(final Class<?> serviceInterface, final ChannelHandlerContext ctx, final int i, final String requestId) {
 		return (T) Proxy.newProxyInstance(FactoryBean.class.getClassLoader(), new Class<?>[]{serviceInterface},
 				new InvocationHandler() {
 					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -110,7 +113,7 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 						SynchronousQueue<Result<?>> quene=new SynchronousQueue<Result<?>>();
 						//代理调用参数的方法
 						ctx.writeAndFlush(req);
-						argSyncObjectMap2.put(id, quene);
+						argSyncObjectMap.put(id, quene);
 						Result<?> res = quene.take();
 						if(res.hasException()) {
 							throw res.getException();
@@ -122,9 +125,14 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 	}
 	
 	public void setThrowableInfo( Throwable e) throws InterruptedException {
+		List<String> keys=new LinkedList<>();
 		for(String key:argSyncObjectMap.keySet()) {
 			SynchronousQueue<Result<?>> quene = argSyncObjectMap.get(key);
 			quene.put(new Result<>(null,e));
+			keys.add(key);
+		}
+		for(String key:keys) {
+			argSyncObjectMap.remove(key);
 		}
 	}
 	
@@ -132,8 +140,9 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 		if (evt instanceof IdleStateEvent){
 			IdleStateEvent event = (IdleStateEvent)evt;
 			if (event.state()== IdleState.ALL_IDLE){
-//				logger.info("客户端已超过60秒未读写数据,关闭连接"+ctx.channel().remoteAddress());
-				ctx.channel().close();
+				logger.info("客户端已超过60秒未读写数据,关闭连接"+ctx.channel().remoteAddress());
+				setThrowableInfo(new Throwable(ctx.channel().localAddress()+" 客户端已超过60秒未读写数据,关闭连接"));
+//				ctx.channel().close();
 			}
 		}else{
 			super.userEventTriggered(ctx,evt);
@@ -142,6 +151,6 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws InterruptedException   {
 		logger.info(cause.getMessage());
 		setThrowableInfo(new Throwable(ctx.channel().localAddress()+" "+cause.getMessage(),cause));
-		ctx.close();
+//		ctx.close();
 	}
 }

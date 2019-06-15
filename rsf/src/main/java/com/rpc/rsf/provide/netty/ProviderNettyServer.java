@@ -1,6 +1,8 @@
 package com.rpc.rsf.provide.netty;
 
 
+import java.util.concurrent.TimeUnit;
+
 import com.rpc.rsf.base.RpcClientManager;
 import com.rpc.rsf.provide.ProviderServer;
 import io.netty.bootstrap.ServerBootstrap;
@@ -24,12 +26,13 @@ import io.netty.handler.timeout.IdleStateHandler;
  * @date  2019年6月13日 下午12:42:50
  */
 public class ProviderNettyServer extends ProviderServer{
-	private static final EventLoopGroup workerGroup = new NioEventLoopGroup(4);
+	private static final EventLoopGroup workerGroup = new NioEventLoopGroup(10);
+	private static final EventLoopGroup group = new NioEventLoopGroup(10);
 	ServerBootstrap bootstrap = new ServerBootstrap();
 
 	public void run() {
 
-		bootstrap.group(workerGroup).
+		bootstrap.group(workerGroup,group).
 		channel(NioServerSocketChannel.class).
 		option(ChannelOption.SO_BACKLOG,1024).
 		childOption(ChannelOption.SO_KEEPALIVE,true).
@@ -38,7 +41,7 @@ public class ProviderNettyServer extends ProviderServer{
 			//创建NIOSocketChannel成功后，在进行初始化时，将它的ChannelHandler设置到ChannelPipeline中，用于处理网络IO事件
 			protected void initChannel(SocketChannel channel) throws Exception {
 				ChannelPipeline pipeline = channel.pipeline();
-				pipeline.addLast(new IdleStateHandler(0, 0, 60));
+				pipeline.addLast(new IdleStateHandler(60, 20, 60 * 10,TimeUnit.SECONDS));
 				pipeline.addLast(new ObjectEncoder());
 				pipeline.addLast(new ObjectDecoder(Integer.MAX_VALUE,ClassResolvers.cacheDisabled(null)));
 				//pipeline.addLast(applicationContext.getBean(ProviderStringNettyHandel.class));

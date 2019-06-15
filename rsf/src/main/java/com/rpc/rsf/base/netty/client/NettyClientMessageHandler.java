@@ -42,7 +42,7 @@ public class NettyClientMessageHandler extends ChannelInboundHandlerAdapter{
 				ctx.writeAndFlush(new Result<>(req.getRequestId(), e));
 			}
     	}
-        
+    	ctx.flush();
     }
     public SynchronousQueue<Result<?>> sendRequest(RpcRequest request,Channel channel) throws Exception {
     	queue = new SynchronousQueue<>();
@@ -60,6 +60,7 @@ public class NettyClientMessageHandler extends ChannelInboundHandlerAdapter{
     	
     	logger.debug("rpt client proxy mentod: "+request.getClassName()+"."+request.getMethodName());
     	channel.writeAndFlush(request);
+    	channel.flush();
   		return queue;
     }
     
@@ -72,9 +73,9 @@ public class NettyClientMessageHandler extends ChannelInboundHandlerAdapter{
     	if (evt instanceof IdleStateEvent){
 			IdleStateEvent event = (IdleStateEvent)evt;
 			if (event.state()== IdleState.ALL_IDLE){
-//				String info = "客户端已超过60秒未读写数据,关闭连接"+ctx.channel().remoteAddress();
+				String info = "客户端已超过60秒未读写数据,关闭连接"+ctx.channel().remoteAddress();
 				//logger.debug(info);
-				//queue.put(new Result<>(reuestId,new Exception(info)));
+				queue.put(new Result<>(reuestId,new Exception(info)));
 				ctx.channel().close();
 			}
 		}else{
