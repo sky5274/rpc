@@ -53,7 +53,7 @@ public class RpcNettyClientHandel implements RpcClientHandel{
             //创建NIOSocketChannel成功后，在进行初始化时，将它的ChannelHandler设置到ChannelPipeline中，用于处理网络IO事件
             protected void initChannel(SocketChannel channel) throws Exception {
                 ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast(new IdleStateHandler(0, 0, 60));
+                pipeline.addLast(new IdleStateHandler(0, 0, 30));
                 pipeline.addLast(new ObjectEncoder());
                 pipeline.addLast(new ObjectDecoder(Integer.MAX_VALUE,ClassResolvers.cacheDisabled(null)));
 				pipeline.addLast(clientHandler);

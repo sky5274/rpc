@@ -8,14 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.locks.LockSupport;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.FactoryBean;
 import com.rpc.rsf.base.Result;
 import com.rpc.rsf.base.RpcCallBack;
 import com.rpc.rsf.base.RpcRequest;
+import com.rpc.rsf.base.call.RpcConnectCallFactory;
 import com.rpc.rsf.provide.ProviderMethodInvoker;
 import com.rpc.rsf.thread.RpcRequestThreadPool;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -61,6 +60,7 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 			@Override
 			public void run() {
 				logger.info("RPC客户端请求接口:"+request.getClassName()+"   方法名:"+request.getMethodName());
+				RpcConnectCallFactory.addConnectCall(new ProviderNettyCallBack(ctx,request.getRequestId()));
 				Result<Object> result=null;
 				int i=0;
 				Object[] args  =request.getArgs();
@@ -85,9 +85,10 @@ public class ProviderObjectNettyHandel extends ChannelInboundHandlerAdapter{
 					}
 					i++;
 				}
-				
+				RpcConnectCallFactory.removeNowConnectCall();
 				ctx.writeAndFlush(result);
 				ctx.flush();
+				
 			}
 		});
 	}

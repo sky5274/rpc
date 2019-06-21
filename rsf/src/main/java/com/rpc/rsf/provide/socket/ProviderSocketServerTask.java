@@ -15,6 +15,7 @@ import com.alibaba.fastjson.JSON;
 import com.rpc.rsf.base.Result;
 import com.rpc.rsf.base.RpcCallBack;
 import com.rpc.rsf.base.RpcRequest;
+import com.rpc.rsf.base.call.RpcConnectCallFactory;
 import com.rpc.rsf.provide.ProviderMethodInvoker;
 
 
@@ -40,6 +41,7 @@ public class ProviderSocketServerTask implements Runnable{
 			input = new ObjectInputStream(client.getInputStream());
 			output = new ObjectOutputStream(client.getOutputStream());
 			RpcRequest request = (RpcRequest) input.readObject();
+			RpcConnectCallFactory.addConnectCall(new ProviderSocketCallBack(input,output,request.getRequestId()));
 			int i=0;
 			Object[] args  =request.getArgs();
 			for(Object arg:args) {
@@ -62,6 +64,7 @@ public class ProviderSocketServerTask implements Runnable{
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			RpcConnectCallFactory.removeNowConnectCall();
 			if (output != null) {
 				try {
 					output.close();
