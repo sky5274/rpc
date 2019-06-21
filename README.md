@@ -1,2 +1,4 @@
 # rpc
-new  my own rpc communication project
+1: rpc 服务提供与消费，自动服务注册与手动添加节点消费，服务提供自动启动
+
+2：rpc 调入使用netty\socket两种方式，提供调用过程中回调机制，以及线程内对调链接
