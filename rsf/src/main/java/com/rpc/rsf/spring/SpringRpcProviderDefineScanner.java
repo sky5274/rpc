@@ -2,16 +2,13 @@ package com.rpc.rsf.spring;
 
 import java.util.Arrays;
 import java.util.Set;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
 import com.rpc.rsf.base.RpcConfig;
-import com.rpc.rsf.base.RpcProvider;
 import com.rpc.rsf.provide.ProviderServer;
 import com.rpc.rsf.provide.netty.ProviderNettyServer;
 import com.rpc.rsf.provide.socket.ProviderSocketServer;
@@ -29,32 +26,19 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 	@Override
 	protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
 		logger.debug("rpc scanner: "+Arrays.toString(basePackages));
-		registerDefaultFilters();
 		Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
-		if (beanDefinitions.isEmpty()) {
-			logger.warn("No rpc interface was found in '" + Arrays.toString(basePackages) + "' package. Please check your configuration.");
-		} else {
-			processBeanDefinitions(beanDefinitions);
-		}
+		//注册服务
+		registServer();
+		
+		//rpc consumer/provider bean configration
+		RpcReadyRegistInfoConfigration config=new RpcReadyRegistInfoConfigration();
+		config.setRegistry(registry);
+		config.init();
+		
 		return beanDefinitions;
 	}
 
-	@Override
-	public void registerDefaultFilters() {
-		// 添加需扫描的RpcConsumer Class
-		this.addIncludeFilter(new AnnotationTypeFilter(RpcProvider.class));
-	}
 
-	private void processBeanDefinitions(Set<BeanDefinitionHolder> beanDefinitions) {
-		if(beanDefinitions !=null &&  !beanDefinitions.isEmpty()) {
-			for(BeanDefinitionHolder beand:beanDefinitions) {
-				logger.info("getBean: { id: "+beand.getBeanName()+", class ："+beand.getBeanDefinition().getBeanClassName()+"}");
-				registRpcProvider(beand);
-			}
-			//注册服务
-			registServer();
-		}
-	}
 	
 	private void registServer() {
 		if(RpcConfig.isSocketServer()) {
@@ -96,29 +80,6 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 	* <p>Description: </p>
 	* @param bean
 	 */
-	private void registRpcProvider(BeanDefinitionHolder bean) {
-		try {
-			String className = bean.getBeanDefinition().getBeanClassName();
-			Class<?> clazz = Class.forName(className);
-			RpcProvider provider = clazz.getDeclaredAnnotation(RpcProvider.class);
-			String url = getNodeUrl(provider);
-			Class<?>[] interfaceTypes=clazz.getInterfaces();
-			if(interfaceTypes!=null) {
-				for(Class<?> inter:interfaceTypes) {
-					RpcConfig.regist(url,inter.getTypeName() ,className, ProviderServer.getPort());
-				}
-			}
-		} catch (ClassNotFoundException e) {
-			logger.warn(e.getMessage(),e);
-		} catch (Exception e) {
-			logger.warn(e.getMessage(),e);
-		}
-	}
-	private String getNodeUrl(RpcProvider provider) {
-		StringBuilder str=new StringBuilder();
-		str.append("/").append(provider.group()).append("/provider").append("/").append(provider.version());
-		return str.toString();
-	}
 	
 	private void registBean(String id, Class<?> intertface) {
 		logger.info("rpt provider load bean name :"+id+">> class :"+intertface.getName());
@@ -128,8 +89,5 @@ public class SpringRpcProviderDefineScanner extends ClassPathBeanDefinitionScann
 		this.registry.registerBeanDefinition(id,definition);
 	}
 	
-	public boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
-	      return super.isCandidateComponent(beanDefinition) && beanDefinition.getMetadata().hasAnnotation(RpcProvider.class.getName());
-	}
 
 }

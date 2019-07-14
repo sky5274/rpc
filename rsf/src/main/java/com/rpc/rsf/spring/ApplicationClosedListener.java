@@ -1,7 +1,6 @@
 package com.rpc.rsf.spring;
 
 
-import java.net.InetSocketAddress;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,8 +9,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.ContextStoppedEvent;
-
 import com.rpc.rsf.base.netty.client.RpcNettyClientHandel;
 import io.netty.channel.Channel;
 

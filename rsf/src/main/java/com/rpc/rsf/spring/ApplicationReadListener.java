@@ -8,6 +8,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+
+import com.rpc.rsf.provide.ProviderContant;
 import com.rpc.rsf.provide.ProviderServer;
 
 /**
@@ -26,7 +28,7 @@ public class ApplicationReadListener  implements ApplicationListener<ContextRefr
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		ProviderServer server = applicationContext.getBean(ProviderServer.class);
-		if(server!=null) {
+		if(server!=null && ProviderContant.hasProvider) {
 			log.info("rpc server start in port:"+ProviderServer.getPort());
 			server.start();
 		}

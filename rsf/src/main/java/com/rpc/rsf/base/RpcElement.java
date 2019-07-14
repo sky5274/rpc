@@ -10,6 +10,7 @@ public class RpcElement {
 	private String className;
 	private String group;
 	private String version;
+	private int timeout;
 	public String getId() {
 		return id;
 	}
@@ -80,5 +81,11 @@ public class RpcElement {
 	}
 	public void setTarget(String target) {
 		this.target = target;
+	}
+	public int getTimeout() {
+		return timeout;
+	}
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 }

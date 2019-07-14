@@ -10,6 +10,7 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import com.rpc.rsf.base.RpcConfig;
 import com.rpc.rsf.base.RpcElement;
+import com.rpc.rsf.provide.ProviderContant;
 import com.rpc.rsf.provide.ProviderServer;
 import com.rpc.rsf.provide.netty.ProviderNettyServer;
 import com.rpc.rsf.provide.socket.ProviderSocketServer;
@@ -34,7 +35,9 @@ public class RpcProviderDefinitinParser implements BeanDefinitionParser{
 			RpcElement rpcEle = getRpcElement(element);
 			logger.info("rpt provider load bean name :"+rpcEle.getId()+">> class :"+rpcEle.getClassName());
 			String url = rpcEle.writeUrl();
-		
+			//标注存在服务提供者
+			ProviderContant.setHasProvider(true);
+			
 			Class<?> clazz = Class.forName(rpcEle.getClassName());
 			//ProvideServer provideServer=applicationContext.getBean(ProvideServer.class);
 			RpcConfig.regist(url,rpcEle.getInterfaceName(),rpcEle.getClassName(),ProviderServer.getPort());

@@ -29,7 +29,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 public class RpcNettyClientHandel implements RpcClientHandel{
     Log logger = LogFactory.getLog(this.getClass());
-    private static EventLoopGroup group = new NioEventLoopGroup(1);
+    private EventLoopGroup group = new NioEventLoopGroup(1);
     private  Bootstrap bootstrap ;
     static NettyClientMessageHandler clientHandler =new NettyClientMessageHandler();
     
@@ -44,11 +44,12 @@ public class RpcNettyClientHandel implements RpcClientHandel{
 	}
 
 
-	public void initBoot() {
+	public void initBoot(int timeout) {
     	bootstrap= new Bootstrap();
     	bootstrap.group(group)
     	.channel(NioSocketChannel.class)
         .option(ChannelOption.TCP_NODELAY, true)
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeout*1000)
         .handler(new ChannelInitializer<SocketChannel>() {
             //创建NIOSocketChannel成功后，在进行初始化时，将它的ChannelHandler设置到ChannelPipeline中，用于处理网络IO事件
             protected void initChannel(SocketChannel channel) throws Exception {
@@ -62,9 +63,9 @@ public class RpcNettyClientHandel implements RpcClientHandel{
     }
     
    
-    public Channel doConnect(InetSocketAddress address) throws InterruptedException {
+    public Channel doConnect(InetSocketAddress address, int timeout) throws InterruptedException {
     	if(bootstrap==null) {
-    		initBoot();
+    		initBoot(timeout);
 //    		bootstrap.remoteAddress(address);
     	}
     	
@@ -91,10 +92,10 @@ public class RpcNettyClientHandel implements RpcClientHandel{
     
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T invoke(RpcRequest request, InetSocketAddress addr) throws Throwable {
-		Channel channel = doConnect(addr);
+	public <T> T invoke(RpcRequest request, InetSocketAddress addr,int timeout) throws Throwable {
+		Channel channel = doConnect(addr,timeout);
 		if (channel!=null && channel.isActive()) {
-            SynchronousQueue<Result<?>> queue = clientHandler.sendRequest(request,channel);
+            SynchronousQueue<Result<?>> queue = clientHandler.sendRequest(request,channel,timeout);
             Result<?> result = queue.take();
             if(result.hasException()) {
             	throw result.getException();

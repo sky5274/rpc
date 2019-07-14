@@ -10,7 +10,7 @@ public class SpringRpcScannerParse implements BeanDefinitionParser{
 	
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		SpringRpcProviderDefineScanner register = new SpringRpcProviderDefineScanner(parserContext.getRegistry());
-		register.doScan(element.getAttribute(ATTR_PACKAGE));
+		register.doScan(element.getAttribute(ATTR_PACKAGE),"com.rpc.rsf");
 		return null;
 	}
 

@@ -10,7 +10,11 @@ import com.rpc.rsf.base.socket.client.RpcSocketClientHandel;
 public class RpcClient <T>{
 	
 	private InetSocketAddress addr;
+	protected int timeout=3000;
 	public RpcClient(InetSocketAddress addr){
+		this.addr=addr;
+	}
+	public RpcClient(InetSocketAddress addr, int timeout){
 		this.addr=addr;
 	}
 	
@@ -23,7 +27,7 @@ public class RpcClient <T>{
 			 rpcClientHandel=new RpcNettyClientHandel();
 		 }
 		 try {
-			 return  rpcClientHandel.invoke(request,addr);
+			 return  rpcClientHandel.invoke(request,addr,timeout);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			throw e;
